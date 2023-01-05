@@ -21,6 +21,7 @@ namespace MonkeSkys_PC
         public static GameObject sky1;
         public static GameObject sky2;
         public static GameObject sky3;
+        public static GameObject sky4;
         public static GameObject texload;
 
         public void Awake()
@@ -33,12 +34,14 @@ namespace MonkeSkys_PC
             sky1 = GameObject.Find("Level/newsky/newsky (1)");
             sky2 = GameObject.Find("Level/city/CosmeticsRoomAnchor/rain/nightsky");
             sky3 = GameObject.Find("Level/newsky");
+            sky4 = GameObject.Find("Level/skyjungle/World_sphere");
             texload = GameObject.CreatePrimitive(PrimitiveType.Plane);
             GetImage();
             LoadImage();
             sky1.GetComponent<Renderer>().material = texload.GetComponent<Renderer>().material;
             sky2.GetComponent<Renderer>().material = texload.GetComponent<Renderer>().material;
             sky3.GetComponent<Renderer>().material = texload.GetComponent<Renderer>().material;
+            sky4.GetComponent<Renderer>().material = texload.GetComponent<Renderer>().material;
             texload.SetActive(false);
         }
         void GetImage()
