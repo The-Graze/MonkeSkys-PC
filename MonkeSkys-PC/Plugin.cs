@@ -10,19 +10,14 @@ using UnityEngine.Networking;
 using System.Collections.Generic;
 namespace MonkeSkys_PC
 {
-    [ModdedGamemode]
     [BepInDependency("org.legoandmars.gorillatag.utilla", "1.5.0")]
     [BepInPlugin(PluginInfo.GUID, PluginInfo.Name, PluginInfo.Version)]
-     class Plugin : BaseUnityPlugin
+    class Plugin : BaseUnityPlugin
     {
-        public static string imagePath;
-        public static readonly List<string> imagesPublic = new List<string>();
-        public static readonly List<string> imageNames = new List<string>();
-        public static GameObject sky1;
-        public static GameObject sky2;
-        public static GameObject sky3;
-        public static GameObject sky4;
-        public static GameObject texload;
+        string imagePath = Path.Combine(Directory.GetCurrentDirectory(), "BepInEx", "Plugins", PluginInfo.Name.ToString(), "Sky");
+        List<string> imagesPublic = new List<string>();
+        List<string> imageNames = new List<string>();
+        Texture2D tex;
 
         public void Awake()
         {
@@ -31,22 +26,11 @@ namespace MonkeSkys_PC
 
         void OnGameInitialized(object sender, EventArgs e)
         {
-            sky1 = GameObject.Find("Level/newsky/newsky (1)");
-            sky2 = GameObject.Find("Level/city/CosmeticsRoomAnchor/rain/nightsky");
-            sky3 = GameObject.Find("Level/newsky");
-            sky4 = GameObject.Find("Level/skyjungle/World_sphere");
-            texload = GameObject.CreatePrimitive(PrimitiveType.Plane);
             GetImage();
             LoadImage();
-            sky1.GetComponent<Renderer>().material = texload.GetComponent<Renderer>().material;
-            sky2.GetComponent<Renderer>().material = texload.GetComponent<Renderer>().material;
-            sky3.GetComponent<Renderer>().material = texload.GetComponent<Renderer>().material;
-            sky4.GetComponent<Renderer>().material = texload.GetComponent<Renderer>().material;
-            texload.SetActive(false);
         }
         void GetImage()
         {
-            imagePath = Path.Combine(Directory.GetCurrentDirectory(), "BepInEx", "Plugins", PluginInfo.Name.ToString(), "Sky");
             if (!Directory.Exists(imagePath))
             {
                 Directory.CreateDirectory(imagePath);
@@ -57,20 +41,38 @@ namespace MonkeSkys_PC
             {
                 imagename[i] = Path.GetFileName(images[i]);
                 imageNames.Add(imagename[i]);
-                imagesPublic.Add(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\Sky\\" + imagename[i]);
-                
+                imagesPublic.Add(Path.GetDirectoryName(imagePath + imagename[i]));
+
             }
         }
-        public static void LoadImage()
+        void LoadImage()
         {
-            Texture2D tex = new Texture2D(1 ,1);
+            tex = new Texture2D(1, 1);
             tex.filterMode = FilterMode.Point;
             byte[] bytes = File.ReadAllBytes(imagesPublic[0]);
             tex.LoadImage(bytes);
             tex.Apply();
-            texload.GetComponent<Renderer>().material.mainTexture = tex;
-            texload.GetComponent<Renderer>().material.shader = Shader.Find("Mobile/Unlit (Supports Lightmap)");
-
+            foreach (Texture t in BetterDayNightManager.instance.beachDayNightSkyboxTextures)
+            {
+                int i = Array.IndexOf(BetterDayNightManager.instance.beachDayNightSkyboxTextures, t);
+                BetterDayNightManager.instance.beachDayNightSkyboxTextures[i] = tex;
+            }
+            foreach (Texture t in BetterDayNightManager.instance.cloudsDayNightSkyboxTextures)
+            {
+                int i = Array.IndexOf(BetterDayNightManager.instance.cloudsDayNightSkyboxTextures, t);
+                BetterDayNightManager.instance.cloudsDayNightSkyboxTextures[i] = tex;
+            }
+            foreach (Texture t in BetterDayNightManager.instance.dayNightSkyboxTextures)
+            {
+                int i = Array.IndexOf(BetterDayNightManager.instance.dayNightSkyboxTextures, t);
+                BetterDayNightManager.instance.dayNightSkyboxTextures[i] = tex;
+            }
+            foreach (Texture t in BetterDayNightManager.instance.dayNightWeatherSkyboxTextures)
+            {
+                int i = Array.IndexOf(BetterDayNightManager.instance.dayNightWeatherSkyboxTextures, t);
+                BetterDayNightManager.instance.dayNightWeatherSkyboxTextures[i] = tex;
+            }
+            BetterDayNightManager.instance.SetOverrideIndex(0);
         }
     }
 }
