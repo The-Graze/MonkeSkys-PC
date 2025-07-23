@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace MonkeSkys_PC
 {
-    [BepInPlugin(PluginInfo.GUID, PluginInfo.Name, PluginInfo.Version)]
+    [BepInPlugin(PluginInfo.Guid, PluginInfo.Name, PluginInfo.Version)]
     internal class Plugin : BaseUnityPlugin
     {
         private readonly string _imageFolder = Path.Combine(Paths.PluginPath, PluginInfo.Name, "Sky");
@@ -24,11 +24,10 @@ namespace MonkeSkys_PC
             {
                 _imageName = Path.GetFileName(_texturePath);
                 LoadImage(_texturePath);
+                Logger.LogMessage($"Loaded Sky image: {_imageName} as skybox");
             }
-            else
-            {
-                Logger.LogMessage("No 'sky' image found in Sky folder.");
-            }
+
+            Logger.LogMessage("No 'sky' image found in Sky folder.");
         }
 
         private string FindSkyImage()
