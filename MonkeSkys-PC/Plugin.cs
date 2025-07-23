@@ -1,78 +1,79 @@
-﻿using Utilla;
-using System;
-using BepInEx;
+﻿using BepInEx;
 using System.IO;
+using System.Linq;
 using UnityEngine;
-using System.Reflection;
-using System.Collections;
-using System.ComponentModel;
-using UnityEngine.Networking;
-using System.Collections.Generic;
+
 namespace MonkeSkys_PC
 {
-    [BepInDependency("org.legoandmars.gorillatag.utilla", "1.5.0")]
     [BepInPlugin(PluginInfo.GUID, PluginInfo.Name, PluginInfo.Version)]
-    class Plugin : BaseUnityPlugin
+    internal class Plugin : BaseUnityPlugin
     {
-        string imagePath = Path.Combine(Directory.GetCurrentDirectory(), "BepInEx", "Plugins", PluginInfo.Name.ToString(), "Sky");
-        List<string> imagesPublic = new List<string>();
-        List<string> imageNames = new List<string>();
-        Texture2D tex;
+        private readonly string _imageFolder = Path.Combine(Paths.PluginPath, PluginInfo.Name, "Sky");
+        private string _texturePath, _imageName;
+        private Texture2D _tex;
 
         public void Awake()
         {
-            Events.GameInitialized += OnGameInitialized;
+            GorillaTagger.OnPlayerSpawned(OnGameInitialized);
         }
 
-        void OnGameInitialized(object sender, EventArgs e)
+        private void OnGameInitialized()
         {
-            GetImage();
-            LoadImage();
-        }
-        void GetImage()
-        {
-            if (!Directory.Exists(imagePath))
+            _texturePath = FindSkyImage();
+            if (_texturePath != null)
             {
-                Directory.CreateDirectory(imagePath);
+                _imageName = Path.GetFileName(_texturePath);
+                LoadImage(_texturePath);
             }
-            string[] images = Directory.GetFiles(imagePath);
-            string[] imagename = new string[images.Length];
-            for (int i = 0; i < imagename.Length; i++)
+            else
             {
-                imagename[i] = Path.GetFileName(images[i]);
-                imageNames.Add(imagename[i]);
-                imagesPublic.Add(Path.GetDirectoryName(imagePath + imagename[i]));
+                Logger.LogMessage("No 'sky' image found in Sky folder.");
+            }
+        }
 
-            }
-        }
-        void LoadImage()
+        private string FindSkyImage()
         {
-            tex = new Texture2D(1, 1);
-            tex.filterMode = FilterMode.Point;
-            byte[] bytes = File.ReadAllBytes(imagesPublic[0]);
-            tex.LoadImage(bytes);
-            tex.Apply();
-            foreach (Texture t in BetterDayNightManager.instance.beachDayNightSkyboxTextures)
+            if (!Directory.Exists(_imageFolder))
+                Directory.CreateDirectory(_imageFolder);
+
+            string[] validExtensions = [".png", ".jpg", ".jpeg", ".bmp"];
+            var files = Directory.GetFiles(_imageFolder);
+
+            return files.FirstOrDefault(file =>
+                validExtensions.Contains(Path.GetExtension(file).ToLower()));
+        }
+        
+
+        private void LoadImage(string path)
+        {
+            _tex = new Texture2D(1, 1)
             {
-                int i = Array.IndexOf(BetterDayNightManager.instance.beachDayNightSkyboxTextures, t);
-                BetterDayNightManager.instance.beachDayNightSkyboxTextures[i] = tex;
-            }
-            foreach (Texture t in BetterDayNightManager.instance.cloudsDayNightSkyboxTextures)
-            {
-                int i = Array.IndexOf(BetterDayNightManager.instance.cloudsDayNightSkyboxTextures, t);
-                BetterDayNightManager.instance.cloudsDayNightSkyboxTextures[i] = tex;
-            }
-            foreach (Texture t in BetterDayNightManager.instance.dayNightSkyboxTextures)
-            {
-                int i = Array.IndexOf(BetterDayNightManager.instance.dayNightSkyboxTextures, t);
-                BetterDayNightManager.instance.dayNightSkyboxTextures[i] = tex;
-            }
-            foreach (Texture t in BetterDayNightManager.instance.dayNightWeatherSkyboxTextures)
-            {
-                int i = Array.IndexOf(BetterDayNightManager.instance.dayNightWeatherSkyboxTextures, t);
-                BetterDayNightManager.instance.dayNightWeatherSkyboxTextures[i] = tex;
-            }
+                filterMode = FilterMode.Point
+            };
+
+            var bytes = File.ReadAllBytes(path);
+            _tex.LoadImage(bytes);
+            _tex.Apply();
+
+            ReplaceAllSkyboxTextures(_tex);
             BetterDayNightManager.instance.SetOverrideIndex(0);
+        }
+
+        private static void ReplaceAllSkyboxTextures(Texture2D newTexture)
+        {
+            Replace(BetterDayNightManager.instance.beachDayNightSkyboxTextures);
+            Replace(BetterDayNightManager.instance.cloudsDayNightSkyboxTextures);
+            Replace(BetterDayNightManager.instance.dayNightSkyboxTextures);
+            Replace(BetterDayNightManager.instance.dayNightWeatherSkyboxTextures);
+            return;
+
+            void Replace(Texture2D[] textures)
+            {
+                for (var i = 0; i < textures.Length; i++)
+                {
+                    textures[i] = newTexture;
+                }
+            }
         }
     }
 }
